@@ -32,14 +32,14 @@ def largest_streak(habits: List[Habit]) -> int:
     """
     if not habits:
         return 0
-    return max(habit.current_streak() for habit in habits)
+    return max(habit.calculate_current_streak() for habit in habits)
 
 
-def streak_for(habit: Habit) -> int:
+def streak_for_single_habit(habit: Habit) -> int:
     """
     Return the current streak for a single habit.
     """
-    return habit.current_streak()
+    return habit.calculate_current_streak()
 
 # Completion rate calculations
 
@@ -57,7 +57,7 @@ def average_completion_rate(habits: List[Habit]) -> float:
     """
     if not habits:
         return 0.0
-    rates = [habit.average_completion_rate() for habit in habits]
+    rates = [habit.completion_rate() for habit in habits]
     return sum(rates) / len(rates)
 
 
@@ -69,7 +69,7 @@ def rank_by_streak(habits: List[Habit]) -> List[Habit]:
     """
     Return habits sorted from highest streak to lowest streak.
     """
-    return sorted(habits, key=lambda habit: habit.current_streak(), reverse=True)
+    return sorted(habits, key=lambda habit: habit.calculate_current_streak(), reverse=True)
 
 
 def rank_by_consistency(habits: List[Habit]) -> List[Habit]:
@@ -84,14 +84,14 @@ def broken_habits(habits: List[Habit]) -> List[Habit]:
     """
     Return a list of habits that were ever broken.
     """
-    return [habit for habit in habits if habit.was_broken()]
+    return [habit for habit in habits if habit.broken()]
 
 
 def unbroken_habits(habits: List[Habit]) -> List[Habit]:
     """
     Return a list of habits that were never broken.
     """
-    return [habit for habit in habits if not habit.was_broken()]
+    return [habit for habit in habits if not habit.broken()]
 
 
 # Summary
