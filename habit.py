@@ -35,6 +35,8 @@ class Habit:
         # Initialize storage for tracking history
         self.history: List[datetime] = []
 
+    
+
     def mark_complete(self, completion_time: Optional[datetime] = None):
         """
         Records the habit as completed at a specific time.
@@ -47,6 +49,8 @@ class Habit:
 
         # Add this completion to our tracking history
         self.history.append(completion_time)
+
+    
 
     def calculate_current_streak(self) -> int:
         """
@@ -77,8 +81,9 @@ class Habit:
             else:
                 break
         return streak
+        
 
-    def has_been_broken(self) -> bool:
+    def broken(self) -> bool:
         """
         Checks if there was any period where the habit was not completed as required.
         """
@@ -101,8 +106,9 @@ class Habit:
                 return True
             last_checkpoint = completion
         return False
+        
 
-    def is_completed_today(self) -> bool:
+    def completed_today(self) -> bool:
         """
         Checks if the habit has been completed during the current day.
         """
@@ -114,6 +120,7 @@ class Habit:
                 return True
 
         return False
+        
 
     def get_last_completion_date(self) -> Optional[datetime]:
         """
@@ -123,12 +130,27 @@ class Habit:
             return None
         return max(self.history)
 
+
+    def completion_rate(self) -> float:
+        """Calculates completion rate as actual completions divided by expected periods."""
+        now = datetime.now()
+        days = (now.date() - self.start_date.date()).days
+        if self.frequency == 'daily':
+            expected_periods = max(days + 1, 1)
+        else:
+            expected_periods = max(((days // 7) + 1), 1)
+        if expected_periods == 0:
+            return 0.0
+        return min(len(self.history) / expected_periods, 1.0)
+        
+
     def clear_completion_history(self):
         """
         Resets the completion tracking while keeping the habit definition intact.
         Useful for starting fresh while maintaining the same habit.
         """
         self.history.clear()
+        
 
     def summary(self) -> str:
         """
@@ -139,6 +161,6 @@ class Habit:
              f"Habit: {self.title}\n"
              f"Frequency: {self.frequency}\n"
              f"Current Streak: {self.calculate_current_streak()}\n"
-             f"Was ever broken: {'Yes' if self.has_been_broken() else 'No'}\n"
+             f"Was ever broken: {'Yes' if self.broken() else 'No'}\n"
              f"Last completed: {last.strftime('%Y-%m-%d') if last else 'Never'}\n"
         )
