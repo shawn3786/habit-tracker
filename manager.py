@@ -1,11 +1,22 @@
 #This module connects CLI actions with database and analytics functions.
 
 # Import necessary built in modules
-from typing import List, Optional
+from typing import Dict, List, Optional
 # Import custom modules
 from habit import Habit
 from storage import DatabaseHandler
-import analytics_module as analytics
+from analytics_module import (
+    filter_by_frequency,
+    largest_streak,
+    streak_for_single_habit,
+    broken_habits,
+    unbroken_habits,
+    completion_rates,
+    average_completion_rate,
+    rank_by_streak,
+    rank_by_consistency,
+    overall_summary
+)
 
 
 class HabitManager:
@@ -42,7 +53,14 @@ class HabitManager:
         return self.habits
         
 
-    def get_habit_title(self, title: str) -> Optional[Habit]:
+    def get_habit_titles(self) -> List[str]:
+        """
+        Returns titles of all habits.
+        """
+        return [habit.title for habit in self.habits]
+
+    
+    def get_habit_by_title(self, title: str) -> Optional[Habit]:
         """
         Finds a habit by its title.
         """
@@ -86,14 +104,14 @@ class HabitManager:
         """
         Filters habits by their frequency.
         """
-        return analytics.filter_by_frequency(self.habits, frequency)
+        return filter_by_frequency(self.habits, frequency)
 
     
     def largest_streak(self) -> int:
         """
         Gets the longest streak across all habits.
         """
-        return analytics.largest_streak(self.habits)
+        return largest_streak(self.habits)
 
     
     def get_habit_streak(self, title: str) -> Optional[int]:
@@ -101,15 +119,17 @@ class HabitManager:
         Gets the current streak for a specific habit.
         """
         habit = self.get_habit_by_title(title)
-        return streak_for(habit) if habit else None
+        return streak_for_single_habit(habit) if habit else None
 
     
     def broken_habits(self) -> List[Habit]:
         """
         Gets habits that have been broken at least once.
         """
-        return analytics.broken_habits(self.habits)
-    def get_unbroken_habits(self) -> List[Habit]:
+        return broken_habits(self.habits)
+
+    
+    def unbroken_habits(self) -> List[Habit]:
         """
         Gets habits that have never been broken.
         """
@@ -119,8 +139,6 @@ class HabitManager:
     def get_completion_rates(self) -> Dict[str, float]:
         """
         Gets completion rates for all habits.
-
-        :return: Dictionary mapping habit names to completion rates
         """
         return completion_rates(self.habits)
 
@@ -128,8 +146,6 @@ class HabitManager:
     def get_average_completion_rate(self) -> float:
         """
         Calculates average completion rate across all habits.
-
-        :return: Average completion rate (0.0 to 1.0)
         """
         return average_completion_rate(self.habits)
 
@@ -154,7 +170,7 @@ class HabitManager:
         """
         Provides comprehensive summary of all habits.
         """
-        return analytics.overall_summary(self.habits)
+        return overall_summary(self.habits)
 
     
     def refresh(self):
