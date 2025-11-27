@@ -58,12 +58,10 @@ def average_completion_rate(habits: List[Habit]) -> float:
     if not habits:
         return 0.0
     rates = [habit.completion_rate() for habit in habits]
-    return sum(rates) / len(rates)
-
+    return sum(rates) / len(rates) if rates else 0.0
 
 
 # Ranking & comparison
-
 
 def rank_by_streak(habits: List[Habit]) -> List[Habit]:
     """
