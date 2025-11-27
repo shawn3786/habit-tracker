@@ -88,7 +88,7 @@ def main():
         # All HABITS
         elif choice == "3":
             print("\n--- All Habits ---")
-            habits = manager.get_all_habits()
+            habits = manager.list_habits()
 
             if not habits:
                 print("No habits found.")
@@ -152,7 +152,11 @@ def main():
             summary = manager.summary()
             print(f"Total Habits: {summary['total_habits']}")
             print(f"Longest Streak: {summary['strongest_streak']}")
-            print(f"Average Completion Rate: {summary['average_completion_rate'] * 100:.1f}%")
+            rate = summary.get('average_completion_rate')
+            if isinstance(rate, (int, float)):
+                print(f"average Completion Rate: {rate * 100:.1f}%")
+            else:
+                print("average Completion Rate: N/A")
             print(f"Broken Habits: {summary['broken_habits']}")
             print(f"Unbroken Habits: {summary['unbroken_habits']}")
         
