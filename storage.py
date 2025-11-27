@@ -5,7 +5,7 @@
 # Import built-in modules for database operations and date handling
 import sqlite3
 from datetime import datetime
-from typing import List, 
+from typing import List, Optional
 # Import the Habit class from the habit module
 from habit import Habit
 
@@ -75,7 +75,7 @@ class DatabaseHandler:
         """
         Load all habits along with their stored completion history.
         """
-        self.cursor.execute("SELECT habit_id, title, frequency, start_date FROM habits")
+        self.cursor.execute("SELECT id, title, frequency, start_date FROM habits")
         rows = self.cursor.fetchall()
 
         habits: List[Habit] = []
