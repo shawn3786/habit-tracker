@@ -129,7 +129,7 @@ class HabitManager:
         return broken_habits(self.habits)
 
     
-    def unbroken_habits(self) -> List[Habit]:
+    def get_unbroken_habits(self) -> List[Habit]:
         """
         Gets habits that have never been broken.
         """
