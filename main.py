@@ -26,6 +26,12 @@ def display_menu():
         print("8.  Exit")
         print("============================================")
 
+# Helper function to display habit list with numbers
+def show_habit_list(titles):
+    for i, title in enumerate(titles, 1):
+        print(f"{i}. {title}")
+
+
 # Main program loop
 def main():
     """
@@ -44,13 +50,13 @@ def main():
 
             if not title:
                 print("Habit name cannot be empty.")
-                return
+                continue
 
             frequency = input("Enter frequency (daily/weekly): ").strip().lower()
 
             if frequency not in ['daily', 'weekly']:
                 print("Frequency must be 'daily' or 'weekly'.")
-                return
+                continue
 
             if manager.create_habit(title, frequency):
                 print(f"✅ Habit '{title}' created successfully!")
@@ -60,24 +66,23 @@ def main():
         # MARK COMPLETE
         elif choice == "2":
             print("\n--- Mark Habit as Completed ---")
-            titles = manager.get_habit_title()
+            titles = manager.get_habit_titles()
 
             if not titles:
                 print("No habits found. Please create a habit first.")
-                return
+                continue
 
-            manager.list_habits_by_title(title)
-
+            show_habit_list(titles)
             title = input("Enter habit name to mark complete: ").strip()
 
             if title not in titles:
                 print(f"Habit '{title}' not found.")
-                return
+                continue
 
-            if manager.complete_habit(title):
+            if manager.mark_habit_complete(title):
                 print(f"✅ Habit '{title}' marked as completed!")
             else:
-                print(f"❌ Failed to mark habit as completed.")
+                print("❌ Failed to mark habit as completed.")
 
 
         # All HABITS
@@ -87,7 +92,7 @@ def main():
 
             if not habits:
                 print("No habits found.")
-                return
+                continue
 
             for i, habit in enumerate(habits, 1):
                 last_completion = habit.get_last_completion_date()
@@ -102,7 +107,7 @@ def main():
 
             if not titles:
                 print("No habits found.")
-                return
+                continue
 
             show_habit_list(titles)
 
@@ -122,22 +127,21 @@ def main():
 
             if not titles:
                 print("No habits found.")
-                return
+                continue
 
             show_habit_list(titles)
-
             title = input("Enter habit name to delete: ").strip()
 
             if title not in titles:
                 print(f"Habit '{title}' not found.")
-                return
+                continue
 
             confirm = input(f"Are you sure you want to delete '{title}'? (y/N): ").strip().lower()
             if confirm == 'y':
                 if manager.delete_habit(title):
                     print(f"✅ Habit '{title}' deleted successfully!")
                 else:
-                    print(f"❌ Failed to delete habit.")
+                    print("❌ Failed to delete habit.")
             else:
                 print("Deletion cancelled.")
 
@@ -155,7 +159,7 @@ def main():
         # Analytics
         elif choice == "7":
 
-            def sub_menu():
+            while True:
                 print("\n--- Analytics Menu ---")
                 print("1. View Completion Rates")
                 print("2. View Habits by Streak Ranking")
@@ -166,94 +170,90 @@ def main():
                 print("7. View Weekly Habits")
                 print("8. Back to Main Menu")
 
-                while True:
-                    sub_menu()
-                    choice = input("Enter your choice (1-8): ").strip()
+                sub_choice = input("Enter your choice (1-8): ").strip()
     
-                    #Displays completion rates
-                    if choice == '1':
-                        print("\n--- Completion Rates ---")
-                        rates = manager.get_completion_rates()
-                        avg_rate = manager.get_average_completion_rate()
+                #Displays completion rates
+                if sub_choice == '1':
+                    print("\n--- Completion Rates ---")
+                    rates = manager.get_completion_rates()
+                    avg_rate = manager.get_average_completion_rate()
     
-                        for habit_name, rate in rates.items():
-                            percentage = rate * 100
-                            print(f"{habit_name}: {percentage:.1f}%")
-    
-                        print(f"\nAverage Completion Rate: {avg_rate * 100:.1f}%")
+                    for habit_name, rate in rates.items():
+                        percentage = rate * 100
+                        print(f"{habit_name}: {percentage:.1f}%")
+
+                    print(f"\nAverage Completion Rate: {avg_rate * 100:.1f}%")
                            
-                    #Shows habits ranked
-                    elif choice == '2':
-                        print("\n--- Habits Ranked by Current Streak ---")
-                        ranked = manager.get_habits_ranked_by_streak()
+                #Shows habits ranked
+                elif sub_choice == '2':
+                    print("\n--- Habits Ranked by Current Streak ---")
+                    ranked = manager.get_habits_ranked_by_streak()
     
-                        for i, habit in enumerate(ranked, 1):
-                            streak = habit.calculate_current_streak()
-                            print(f"{i}. {habit.title}: {streak} days")
+                    for i, habit in enumerate(ranked, 1):
+                        streak = habit.calculate_current_streak()
+                        print(f"{i}. {habit.title}: {streak} days")
     
-                    #Shows habits ranked by consistency
-                    elif choice == '3':
-                        print("\n--- Habits Ranked by Consistency ---")
-                        ranked = manager.get_habits_ranked_by_consistency()
+                 #Shows habits ranked by consistency
+                elif sub_choice == '3':
+                    print("\n--- Habits Ranked by Consistency ---")
+                    ranked = manager.get_habits_ranked_by_consistency()
     
-                        for i, habit in enumerate(ranked, 1):
-                            # Calculate completion rate for this habit
-                            from analytics_module import completion_rates
-                            rates = completion_rates([habit])
-                            percentage = rates[habit.title] * 100
-                            print(f"{i}. {habit.title}: {percentage:.1f}%")
+                    for i, habit in enumerate(ranked, 1):
+                        # Calculate completion rate for this habit
+                        percentage = habit.completion_rate() * 100
+                        print(f"{i}. {habit.title}: {percentage:.1f}%")
     
-                    #Shows habits that have been broken
-                    elif choice == '4':
-                        print("\n--- Broken Habits ---")
-                        broken = manager.broken_habits()
+                #Shows habits that have been broken
+                elif sub_choice == '4':
+                    print("\n--- Broken Habits ---")
+                    broken = manager.broken_habits()
     
-                        if not broken:
-                            print("No broken habits! Great job! 🎉")
-                            return
+                    if not broken:
+                        print("No broken habits! Great job! 🎉")
+                        continue
     
-                        for habit in broken:
-                            print(f"• {habit.title} ({habit.frequency})")
+                    for habit in broken:
+                        print(f"• {habit.title} ({habit.frequency})")
     
-                    #Shows habits that have never been broken
-                    elif choice == '5':
-                        print("\n--- Unbroken Habits ---")
-                        unbroken = manager.get_unbroken_habits()
+                #Shows habits that have never been broken
+                elif sub_choice == '5':
+                    print("\n--- Unbroken Habits ---")
+                    unbroken = manager.get_unbroken_habits()
     
-                        if not unbroken:
-                            print("No unbroken habits found.")
-                            return
+                    if not unbroken:
+                        print("No unbroken habits found.")
+                        continue
     
-                        for habit in unbroken:
-                            print(f"• {habit.title} ({habit.frequency}) - Streak: {habit.calculate_current_streak()}")
+                    for habit in unbroken:
+                        print(f"• {habit.title} ({habit.frequency}) - Streak: {habit.calculate_current_streak()}")
     
-                    #Shows daily habits
-                    elif choice == '6':
-                        print("\n--- Daily Habits ---")
-                        daily_habits = manager.filter_by_frequency("daily")
-                        if not daily_habits:
-                            print("No daily habits found.")    
-                        else:
-                            for habit in daily_habits:
-                                streak = habit.calculate_current_streak()
-                                print(f"• {habit.title} - Current Streak: {streak} days")
-    
-                    #Shows weekly habits
-                    elif choice == '7':
-                        print("\n--- Weekly Habits ---")
-                        weekly_habits = manager.filter_by_frequency("weekly")
-                        if not weekly_habits:
-                            print("No weekly habits found.")
-                        else:
-                            for habit in weekly_habits:
-                                streak = habit.calculate_current_streak()
-                                print(f"• {habit.title} - Current Streak: {streak} weeks")
-    
-                    #Back to main menu
-                    elif choice == '8':
-                        break
+                #Shows daily habits
+                elif sub_choice == '6':
+                    print("\n--- Daily Habits ---")
+                    daily_habits = manager.filter_by_frequency("daily")
+                    if not daily_habits:
+                        print("No daily habits found.")    
                     else:
-                        print("Invalid choice. Please enter a number between 1 and 8. ")
+                        for habit in daily_habits:
+                            streak = habit.calculate_current_streak()
+                            print(f"• {habit.title} - Current Streak: {streak} days")
+    
+                #Shows weekly habits
+                elif sub_choice == '7':
+                    print("\n--- Weekly Habits ---")
+                    weekly_habits = manager.filter_by_frequency("weekly")
+                    if not weekly_habits:
+                        print("No weekly habits found.")
+                    else:                                                
+                        for habit in weekly_habits:
+                            streak = habit.calculate_current_streak()
+                            print(f"• {habit.title} - Current Streak: {streak} weeks")
+    
+                #Back to main menu
+                elif sub_choice == '8':
+                    break
+                else:
+                    print("Invalid choice. Please enter a number between 1 and 8. ")
 
         elif choice == "8": 
             print("\nThank you for using the Habit Tracking Application!")
@@ -263,6 +263,8 @@ def main():
 
         else:
             print("Invalid choice. Please enter a number between 1 and 8.")
+if __name__ == "__main__":
+    main()
             
 
 
