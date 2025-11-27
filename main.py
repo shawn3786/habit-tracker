@@ -1,274 +1,297 @@
-# Main Streamlit Module for Habit Tracking Application
-# Provides web interface for users to interact with the system
+# Main CLI Module for Habit Tracking Application
+# Provides command-line interface for users to interact with the system
 
-import streamlit as st
-import sys
-from datetime import datetime
+#Custom modules
 from manager import HabitManager
 
-# Initialize session state for habit manager
-if 'manager' not in st.session_state:
-    st.session_state.manager = HabitManager()
+
 
 def display_menu():
-    """
-    Shows the main menu options to the user in Streamlit.
-    """
-    st.sidebar.title("🍃 Habit Tracking Application")
-    st.sidebar.markdown("---")
-    
-    menu_options = [
-        "Create New Habit",
-        "Mark Habit as Completed", 
-        "View All Habits",
-        "View Habit Details",
-        "Delete Habit",
-        "View Overall Summary",
-        "View Analytics",
-        "Exit"
-    ]
-    
-    choice = st.sidebar.selectbox("Navigate to:", menu_options)
-    return menu_options.index(choice) + 1
+        """
+        Shows the main menu options to the user.
+        """
+        print("\n============================================")
+        print("          HABIT TRACKING APPLICATION")
+        print("============================================")
+        print("1.  Create New Habit")
+        print("2.  Mark Habit as Completed")
+        print("3.  View All Habits")
+        print("4.  View Habit Details")
+        print("5.  Delete Habit")
+        print("6.  View Overall Summary")
+        print("7.  View Analytics")
+        print("8.  Exit")
+        print("============================================")
 
+# Helper function to display habit list with numbers
 def show_habit_list(titles):
-    """
-    Display habit list in Streamlit format.
-    """
     for i, title in enumerate(titles, 1):
-        st.write(f"{i}. {title}")
+        print(f"{i}. {title}")
 
+
+# Main program loop
 def main():
     """
-    Entry point for the Streamlit application.
+    Entry point for the application.
     """
-    st.title("🍃 Habit Tracking Application")
-    
-    manager = st.session_state.manager
-    choice = display_menu()
-    
-    # Handle habit creation
-    if choice == 1:
-        st.header("Create New Habit")
+    manager = HabitManager()
+
+    while True:
+        display_menu()
+        choice = input("Enter your choice (1-8): ")
         
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            title = st.text_input("Enter habit name:").strip()
-        
-        with col2:
-            frequency = st.selectbox("Enter frequency:", ["daily", "weekly"])
-        
-        if st.button("Create Habit"):
+        # Handle habit creation
+        if choice == "1":
+            print("\n--- Create New Habit ---")
+            title = input("Enter habit name: ")
+
             if not title:
-                st.error("Habit name cannot be empty.")
+                print("Habit name cannot be empty.")
+                continue
+
+            frequency = input("Enter frequency (daily/weekly): ").strip().lower()
+
+            if frequency not in ['daily', 'weekly']:
+                print("Frequency must be 'daily' or 'weekly'.")
+                continue
+
+            if manager.create_habit(title, frequency):
+                print(f"✅ Habit '{title}' created successfully!")
             else:
-                if manager.create_habit(title, frequency):
-                    st.success(f"✅ Habit '{title}' created successfully!")
-                else:
-                    st.error(f"❌ Failed to create habit. Maybe '{title}' already exists?")
+                print(f"❌ Failed to create habit. Maybe '{title}' already exists?")
 
-    # MARK COMPLETE
-    elif choice == 2:
-        st.header("Mark Habit as Completed")
-        titles = manager.get_habit_titles()
+        # MARK COMPLETE
+        elif choice == "2":
+            print("\n--- Mark Habit as Completed ---")
+            titles = manager.get_habit_titles()
 
-        if not titles:
-            st.warning("No habits found. Please create a habit first.")
-        else:
-            selected_title = st.selectbox("Select habit to mark complete:", titles)
-            
-            if st.button("Mark as Completed"):
-                if selected_title not in titles:
-                    st.error(f"Habit '{selected_title}' not found.")
-                else:
-                    if manager.mark_habit_complete(selected_title):
-                        st.success(f"✅ Habit '{selected_title}' marked as completed!")
-                    else:
-                        st.error("❌ Failed to mark habit as completed.")
+            if not titles:
+                print("No habits found. Please create a habit first.")
+                continue
 
-    # All HABITS
-    elif choice == 3:
-        st.header("All Habits")
-        habits = manager.list_habits()
+            show_habit_list(titles)
+            title = input("Enter habit name to mark complete: ").strip()
 
-        if not habits:
-            st.info("No habits found.")
-        else:
+            if title not in titles:
+                print(f"Habit '{title}' not found.")
+                continue
+
+            if manager.mark_habit_complete(title):
+                print(f"✅ Habit '{title}' marked as completed!")
+            else:
+                print("❌ Failed to mark habit as completed.")
+
+
+        # All HABITS
+        elif choice == "3":
+            print("\n--- All Habits ---")
+            habits = manager.list_habits()
+
+            if not habits:
+                print("No habits found.")
+                continue
+
             for i, habit in enumerate(habits, 1):
                 last_completion = habit.get_last_completion_date()
                 last_str = last_completion.strftime("%Y-%m-%d") if last_completion else "Never"
                 streak = habit.calculate_current_streak()
-                st.write(f"{i}. **{habit.title}** ({habit.frequency}) - Streak: {streak} - Last: {last_str}")
+                print(f"{i}. {habit.title} ({habit.frequency}) - Streak: {streak} - Last: {last_str}")
 
-    # HABIT DETAILS
-    elif choice == 4:
-        st.header("Habit Details")
-        titles = manager.get_habit_titles()
+        # HABIT DETAILS
+        elif choice == "4":
+            print("\n--- Habit Details ---")
+            titles = manager.get_habit_titles()
 
-        if not titles:
-            st.info("No habits found.")
-        else:
-            selected_title = st.selectbox("Select habit to view details:", titles)
-            
-            if st.button("View Details"):
-                habit = manager.get_habit_by_title(selected_title)
-                if habit:
-                    st.subheader(f"Details for: {habit.title}")
-                    st.text(habit.summary())
+            if not titles:
+                print("No habits found.")
+                continue
+
+            show_habit_list(titles)
+
+            title = input("Enter habit name to view details: ")
+            habit = manager.get_habit_by_title(title)
+
+            if habit:
+                print(f"\n{habit.summary()}")
+            else:
+                print(f"Habit '{title}' not found.")
+
+
+        # DELETE HABIT
+        elif choice == "5":
+            print("\n--- Delete Habit ---")
+            titles = manager.get_habit_titles()
+
+            if not titles:
+                print("No habits found.")
+                continue
+
+            show_habit_list(titles)
+            title = input("Enter habit name to delete: ")
+
+            if title not in titles:
+                print(f"Habit '{title}' not found.")
+                continue
+
+            confirm = input(f"Are you sure you want to delete '{title}'? (y/N): ").strip().lower()
+            if confirm == 'y':
+                if manager.delete_habit(title):
+                    print(f"✅ Habit '{title}' deleted successfully!")
                 else:
-                    st.error(f"Habit '{selected_title}' not found.")
+                    print("❌ Failed to delete habit.")
+            else:
+                print("Deletion cancelled.")
 
-    # DELETE HABIT
-    elif choice == 5:
-        st.header("Delete Habit")
-        titles = manager.get_habit_titles()
-
-        if not titles:
-            st.info("No habits found.")
-        else:
-            selected_title = st.selectbox("Select habit to delete:", titles)
-            
-            if st.button("Delete Habit", type="primary"):
-                if selected_title not in titles:
-                    st.error(f"Habit '{selected_title}' not found.")
-                else:
-                    st.warning(f"Are you sure you want to delete '{selected_title}'?")
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        if st.button("Yes, Delete", type="secondary"):
-                            if manager.delete_habit(selected_title):
-                                st.success(f"✅ Habit '{selected_title}' deleted successfully!")
-                                st.rerun()
-                            else:
-                                st.error("❌ Failed to delete habit.")
-                    
-                    with col2:
-                        if st.button("Cancel", type="secondary"):
-                            st.info("Deletion cancelled.")
-
-    # Overall Summary
-    elif choice == 6:
-        st.header("Overall Summary")
-        summary = manager.summary()
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.metric("Total Habits", summary['total_habits'])
-            st.metric("Longest Streak", summary['strongest_streak'])
-        
-        with col2:
+       
+        #Overall Summary
+        elif choice == "6":
+            print("\n--- Overall Summary ---")
+            summary = manager.summary()
+            print(f"Total Habits: {summary['total_habits']}")
+            print(f"Longest Streak: {summary['strongest_streak']}")
             rate = summary.get('average_completion_rate')
             if isinstance(rate, (int, float)):
-                st.metric("Average Completion Rate", f"{rate * 100:.1f}%")
+                print(f"average Completion Rate: {rate * 100:.1f}%")
             else:
-                st.metric("Average Completion Rate", "N/A")
-            
-            st.metric("Broken Habits", summary['broken_habits'])
-            st.metric("Unbroken Habits", summary['unbroken_habits'])
-
-    # Analytics
-    elif choice == 7:
-        st.header("Analytics Dashboard")
+                print("average Completion Rate: N/A")
+            print(f"Broken Habits: {summary['broken_habits']}")
+            print(f"Unbroken Habits: {summary['unbroken_habits']}")
         
-        analytics_options = [
-            "View Completion Rates",
-            "View Habits by Streak Ranking", 
-            "View Habits by Consistency",
-            "View Broken Habits",
-            "View Unbroken Habits",
-            "View Daily Habits",
-            "View Weekly Habits"
-        ]
-        
-        sub_choice = st.selectbox("Select Analytics View:", analytics_options)
-        
-        # Displays completion rates
-        if sub_choice == "View Completion Rates":
-            st.subheader("Completion Rates")
-            rates = manager.get_completion_rates()
-            avg_rate = manager.get_average_completion_rate()
+        # Analytics
+        elif choice == "7":
 
-            for habit_name, rate in rates.items():
-                percentage = rate * 100
-                st.write(f"**{habit_name}**: {percentage:.1f}%")
+            while True:
+                print("\n--- Analytics Menu ---")
+                print("1. View Completion Rates")
+                print("2. View Longest overall Streak")
+                print("3. View longest Streak of current Habit")
+                print("4. View Broken Habits")
+                print("5. View Unbroken Habits")
+                print("6. View Daily Habits")
+                print("7. View Weekly Habits")
+                print("8. View Habits Ranked by Current Streak")
+                print("9. Back to Main Menu")
 
-            st.metric("Average Completion Rate", f"{avg_rate * 100:.1f}%")
-                       
-        # Shows habits ranked
-        elif sub_choice == "View Habits by Streak Ranking":
-            st.subheader("Habits Ranked by Current Streak")
-            ranked = manager.get_habits_ranked_by_streak()
+                sub_choice = input("Enter your choice (1-8): ").strip()
+    
+                #Displays completion rates
+                if sub_choice == '1':
+                    print("\n--- Completion Rates ---")
+                    rates = manager.get_completion_rates()
+                    avg_rate = manager.get_average_completion_rate()
+    
+                    for habit_name, rate in rates.items():
+                        percentage = rate * 100
+                        print(f"{habit_name}: {percentage:.1f}%")
 
-            for i, habit in enumerate(ranked, 1):
-                streak = habit.calculate_current_streak()
-                st.write(f"{i}. **{habit.title}**: {streak} days")
+                    print(f"\nAverage Completion Rate: {avg_rate * 100:.1f}%")
+                           
+                #Shows longest streak overall
+                elif sub_choice == '2':
+                    print("\n--- Longest Overall Streak ---")
+                    longest_streak = manager.largest_streak()
 
-         # Shows habits ranked by consistency
-        elif sub_choice == "View Habits by Consistency":
-            st.subheader("Habits Ranked by Consistency")
-            ranked = manager.get_habits_ranked_by_consistency()
+                    for habit in manager.habits:
+                        if habit.calculate_current_streak() == longest_streak:
+                            print(f"Habit: {habit.title} - Streak: {longest_streak} days")
+                            break
+                        
+                        
+                #Shows longest streak for a specific habit
+                elif sub_choice == '3':
+                    print("\n--- Longest Streak of Current Habit ---")
+                    title = input("Enter habit name: ")
 
-            for i, habit in enumerate(ranked, 1):
-                percentage = habit.completion_rate() * 100
-                st.write(f"{i}. **{habit.title}**: {percentage:.1f}%")
+                    if not title:
+                        print("Habit name cannot be empty.")
+                        continue
+                    streak = manager.largest_streak_for_habit(title)
+                    if streak is not None:
+                        print(f"The longest streak for '{title}' is {streak} days.")
+                    else:
+                        print(f"Habit '{title}' not found.")
+    
+                #Shows habits that have been broken
+                elif sub_choice == '4':
+                    print("\n--- Broken Habits ---")
+                    broken = manager.broken_habits()
+    
+                    if not broken:
+                        print("No broken habits! Great job! 🎉")
+                        continue
+    
+                    for habit in broken:
+                        print(f"• {habit.title} ({habit.frequency})")
+    
+                #Shows habits that have never been broken
+                elif sub_choice == '5':
+                    print("\n--- Unbroken Habits ---")
+                    unbroken = manager.get_unbroken_habits()
+    
+                    if not unbroken:
+                        print("No unbroken habits found.")
+                        continue
+    
+                    for habit in unbroken:
+                        print(f"• {habit.title} ({habit.frequency}) - Streak: {habit.calculate_current_streak()}")
+    
+                #Shows daily habits
+                elif sub_choice == '6':
+                    print("\n--- Daily Habits ---")
+                    daily_habits = manager.filter_by_frequency("daily")
+                    if not daily_habits:
+                        print("No daily habits found.")    
+                    else:
+                        for habit in daily_habits:
+                            streak = habit.calculate_current_streak()
+                            print(f"• {habit.title} - Current Streak: {streak} days")
+    
+                #Shows weekly habits
+                elif sub_choice == '7':
+                    print("\n--- Weekly Habits ---")
+                    weekly_habits = manager.filter_by_frequency("weekly")
+                    if not weekly_habits:
+                        print("No weekly habits found.")
+                    else:                                                
+                        for habit in weekly_habits:
+                            streak = habit.calculate_current_streak()
+                            print(f"• {habit.title} - Current Streak: {streak} weeks")
 
-        # Shows habits that have been broken
-        elif sub_choice == "View Broken Habits":
-            st.subheader("Broken Habits")
-            broken = manager.broken_habits()
+                #Shows habits ranked by current streak
+                elif sub_choice == '8':
+                    print("\n--- Habits Ranked by Current Streak ---")
+                    ranked = manager.get_habits_ranked_by_streak()
 
-            if not broken:
-                st.success("No broken habits! Great job! 🎉")
-            else:
-                for habit in broken:
-                    st.write(f"• **{habit.title}** ({habit.frequency})")
+                    for i, habit in enumerate(ranked, 1):
+                        streak = habit.calculate_current_streak()
+                        print(f"{i}. {habit.title}: {streak} days")
+    
+                #Back to main menu
+                elif sub_choice == '9':
+                    break
+                else:
+                    print("Invalid choice. Please enter a number between 1 and 8. ")
 
-        # Shows habits that have never been broken
-        elif sub_choice == "View Unbroken Habits":
-            st.subheader("Unbroken Habits")
-            unbroken = manager.get_unbroken_habits()
+        elif choice == "8": 
+            print("\nThank you for using the Habit Tracking Application!")
+            print("Goodbye! 👋")
+            manager.close()
+            break
 
-            if not unbroken:
-                st.info("No unbroken habits found.")
-            else:
-                for habit in unbroken:
-                    streak = habit.calculate_current_streak()
-                    st.write(f"• **{habit.title}** ({habit.frequency}) - Streak: {streak}")
-
-        # Shows daily habits
-        elif sub_choice == "View Daily Habits":
-            st.subheader("Daily Habits")
-            daily_habits = manager.filter_by_frequency("daily")
-            if not daily_habits:
-                st.info("No daily habits found.")    
-            else:
-                for habit in daily_habits:
-                    streak = habit.calculate_current_streak()
-                    st.write(f"• **{habit.title}** - Current Streak: {streak} days")
-
-        # Shows weekly habits
-        elif sub_choice == "View Weekly Habits":
-            st.subheader("Weekly Habits")
-            weekly_habits = manager.filter_by_frequency("weekly")
-            if not weekly_habits:
-                st.info("No weekly habits found.")
-            else:                                                
-                for habit in weekly_habits:
-                    streak = habit.calculate_current_streak()
-                    st.write(f"• **{habit.title}** - Current Streak: {streak} weeks")
-
-    # EXIT
-    elif choice == 8:
-        st.header("Thank You!")
-        st.success("Thank you for using the Habit Tracking Application!")
-        st.info("Goodbye! 👋")
-        manager.close()
-        
-        if st.button("Restart Application"):
-            st.rerun()
-
+        else:
+            print("Invalid choice. Please enter a number between 1 and 8.")
 if __name__ == "__main__":
     main()
+            
+
+
+
+
+
+
+
+
+
+
+
+
