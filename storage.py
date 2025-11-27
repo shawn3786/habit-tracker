@@ -1,155 +1,186 @@
-#Storage module for the Habit Tracking App.
-#This module handles all interactions with the SQLite database.
-#This module does NOT contain business logic — only database operations.
+#This module connects CLI actions with database and analytics functions.
 
-# Import built-in modules for database operations and date handling
-import sqlite3
-from datetime import datetime
-from typing import List, Optional
-# Import the Habit class from the habit module
+# Import necessary built in modules
+from typing import Dict, List, Optional
+# Import custom modules
 from habit import Habit
+from storage import DatabaseHandler
+from analytics_module import (
+    filter_by_frequency,
+    largest_streak,
+    streak_for_single_habit,
+    broken_habits,
+    unbroken_habits,
+    completion_rates,
+    average_completion_rate,
+    rank_by_streak,
+    rank_by_consistency,
+    overall_summary
+)
 
 
-class DatabaseHandler:
+class HabitManager:
     """
-    The DatabaseHandler class acts as the bridge between your Habit objects and the database.
-    It creates required tables, saves new habits, loads habits, and stores completion events.
+    Manages all habit operations and coordinates between different modules.
+    Acts as the central controller for the habit tracking application.
     """
 
-    def __init__(self, db_path: str = "habits.db"):
+    def __init__(self, database_path: str = "habits.db"):
         """
-        Create a database connection and ensure all tables exist.
+        Initializes the manager with storage and loads existing habits.
         """
-        self.connection = sqlite3.connect(db_path)
-        self.cursor = self.connection.cursor()
-        self._create_tables()
-
-    
-    def _create_tables(self):
-        """
-        Creates required tables for storing habits and their completion logs.
-        """
-        # Create the habits table
-        self.cursor.execute("""                          
-            CREATE TABLE IF NOT EXISTS habits (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT NOT NULL,
-                frequency TEXT NOT NULL,
-                start_date TEXT NOT NULL
-            )    
-        """)   
-        # Create the habit_history table
-        self.cursor.execute("""
-            CREATE TABLE IF NOT EXISTS habit_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                habit_id INTEGER NOT NULL,
-                completion_time TEXT NOT NULL,
-                FOREIGN KEY (habit_id) REFERENCES habits(id)
-            )
-        """)
-        # Apply the changes to the database
-        self.connection.commit()
+        self.storage = DatabaseHandler(database_path)
+        self.habits = self.storage.load_habits()
 
 
-    def save_habit(self, habit: Habit) -> bool:
+    def create_habit(self, title: str, frequency: str) -> bool:
         """
-        Save a new habit into the database.
+        Create a new habit and save it into database.
         """
-        try:
-            self.cursor.execute(
-                """
-                INSERT INTO habits (title, frequency, start_date)
-                VALUES (?, ?, ?)
-                """,
-                (habit.title, habit.frequency, habit.start_date.isoformat())
-            )
-            self.connection.commit()
-            return True
-            
-        except sqlite3.IntegrityError:
-            # Handle case where habit with same title already exists
-            return False
+        habit = Habit(title, frequency)
+        saved = self.storage.save_habit(habit)
+
+        if saved:
+            self.habits.append(habit)
+
+        return saved
+
+
+    def list_habits(self) -> List[Habit]:
+        """
+        Returns all habits in the system.
+        """
+        return self.habits
         
 
-    def load_habits(self) -> List[Habit]:
+    def get_habit_titles(self) -> List[str]:
         """
-        Load all habits along with their stored completion history.
+        Returns titles of all habits.
         """
-        self.cursor.execute("SELECT habit_id, title, frequency, start_date FROM habits")
-        rows = self.cursor.fetchall()
-
-        habits: List[Habit] = []
-
-        for habit_id, title, frequency, start_date_str in rows:
-            # Create Habit instance
-            habit = Habit(title=title, frequency=frequency)
-            habit.start_date = datetime.fromisoformat(start_date_str)
-
-            # Load completion history for this habit
-            self.cursor.execute(
-                "SELECT completion_time FROM habit_history WHERE habit_id = ?",
-                (habit_id,)
-            )
-            completion_rows = self.cursor.fetchall()
-
-            for (time_str,) in completion_rows:
-                habit.history.append(datetime.fromisoformat(time_str))
-            habits.append(habit)
-
-        return habits
+        return [habit.title for habit in self.habits]
 
     
-    def record_completion(self, habit_title: str, time: Optional[datetime] = None) -> bool:
+    def get_habit_by_title(self, title: str) -> Optional[Habit]:
         """
-        Record a completion event for a habit.     
-        If no time is provided, uses current time.
+        Finds a habit by its title.
         """
-        if time is None:
-            time = datetime.now()
+        for habit in self.habits:
+            if habit.title == title:
+                return habit
+        return None
 
-        try:
-            # Find habit ID by title
-            self.cursor.execute("SELECT id FROM habits WHERE title = ?", (habit_title,))
-            result = self.cursor.fetchone()
     
-            if result:
-                habit_id = result[0]   # Habit not found
-                self.cursor.execute(
-                    """
-                    INSERT INTO habit_history (habit_id, completion_time)
-                    VALUES (?, ?)
-                    """,
-                    (habit_id, time.isoformat())
-                )
-                self.connection.commit()
-                return True
-            return False
-        except sqlite3.Error:
+    def mark_habit_complete(self, title: str) -> bool:
+        """
+        Mark a habit complete and update the database.
+        """
+        success = self.storage.record_completion(title)
+
+        if not success:
             return False
 
-    
-    def delete_habit(self, habit_title: str) -> bool:
-        """
-        Remove a habit and all of its completion logs.
-        """
-        try:
-        # Find ID first
-            self.cursor.execute("SELECT id FROM habits WHERE title = ?", (habit_title,))
-            row = self.cursor.fetchone()
-    
-            if  row:
-                habit_id = row[0]
-                # Delete completion records
-                self.cursor.execute("DELETE FROM habit_history WHERE habit_id = ?", (habit_id,))
-                 # Delete the habit itself
-                self.cursor.execute("DELETE FROM habits WHERE id = ?", (habit_id,))
-                self.connection.commit()
-                return True
-            return False
-        except sqlite3.Error:
-            return False
+        # update in-memory object
+        for habit in self.habits:
+            if habit.title == title:
+                habit.mark_complete()
+                break
+
+        return True
 
     
+    def delete_habit(self, title: str) -> bool:
+        """
+        Delete a habit from database and memory.
+        """
+        success = self.storage.delete_habit(title)
+
+        if success:
+            self.habits = [h for h in self.habits if h.title != title]
+
+        return success
+
+    
+    def filter_by_frequency(self, frequency: str) -> List[Habit]:
+        """
+        Filters habits by their frequency.
+        """
+        return filter_by_frequency(self.habits, frequency)
+
+    
+    def largest_streak(self) -> int:
+        """
+        Gets the longest streak across all habits.
+        """
+        return largest_streak(self.habits)
+
+    
+    def get_habit_streak(self, title: str) -> Optional[int]:
+        """
+        Gets the current streak for a specific habit.
+        """
+        habit = self.get_habit_by_title(title)
+        return streak_for_single_habit(habit) if habit else None
+
+    
+    def broken_habits(self) -> List[Habit]:
+        """
+        Gets habits that have been broken at least once.
+        """
+        return broken_habits(self.habits)
+
+    
+    def unbroken_habits(self) -> List[Habit]:
+        """
+        Gets habits that have never been broken.
+        """
+        return unbroken_habits(self.habits)
+
+    
+    def get_completion_rates(self) -> Dict[str, float]:
+        """
+        Gets completion rates for all habits.
+        """
+        return completion_rates(self.habits)
+
+    
+    def get_average_completion_rate(self) -> float:
+        """
+        Calculates average completion rate across all habits.
+        """
+        return average_completion_rate(self.habits)
+
+    
+
+    def get_habits_ranked_by_streak(self) -> List[Habit]:
+        """
+        Returns habits sorted by current streak (highest first).
+        """
+        return rank_by_streak(self.habits)
+
+    
+
+    def get_habits_ranked_by_consistency(self) -> List[Habit]:
+        """
+        Returns habits sorted by completion rate (highest first).
+        """
+        return rank_by_consistency(self.habits)
+
+    
+    def summary(self):
+        """
+        Provides comprehensive summary of all habits.
+        """
+        return overall_summary(self.habits)
+
+    
+    def refresh(self):
+        """
+        Reload all habits from database.
+        """
+        self.habits = self.storage.load_habits()
+
     def close(self):
-        """Close the database connection."""
-        self.connection.close()
+        """
+        Closes the storage connection properly.
+        """
+        self.storage.close()
