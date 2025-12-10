@@ -35,11 +35,11 @@ def largest_streak(habits: List[Habit]) -> int:
     return max(habit.calculate_current_streak() for habit in habits)
 
 
-def streak_for_single_habit(habit: Habit) -> int:
+def largest_streak_for_habit(habit: Habit) -> int:
     """
     Return the current streak for a single habit.
     """
-    return habit.calculate_current_streak()
+    return max(habit.calculate_current_streak() if habit else 0, 0)
 
 # Completion rate calculations
 
@@ -69,12 +69,6 @@ def rank_by_streak(habits: List[Habit]) -> List[Habit]:
     """
     return sorted(habits, key=lambda habit: habit.calculate_current_streak(), reverse=True)
 
-
-def rank_by_consistency(habits: List[Habit]) -> List[Habit]:
-    """
-    Sort habits by completion rate (best → worst).
-    """
-    return sorted(habits, key=lambda habit: habit.completion_rate(), reverse=True)
 
 # Broken habit analytics
 
