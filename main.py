@@ -18,9 +18,8 @@ def display_menu():
         print("3.  View All Habits")
         print("4.  View Habit Details")
         print("5.  Delete Habit")
-        print("6.  View Overall Summary")
-        print("7.  View Analytics")
-        print("8.  Exit")
+        print("6.  View Analytics")
+        print("7.  Exit")
         print("============================================")
 
 # Helper function to display habit list with numbers
@@ -48,7 +47,10 @@ def main():
             if not title:
                 print("Habit name cannot be empty.")
                 continue
-
+                
+            if title in manager.get_habit_titles():
+                print(f"❌ Habit '{title}' already exists! Please choose a different name.")
+                continue
             frequency = input("Enter frequency (daily/weekly): ").strip().lower()
 
             if frequency not in ['daily', 'weekly']:
@@ -92,10 +94,7 @@ def main():
                 continue
 
             for i, habit in enumerate(habits, 1):
-                last_completion = habit.get_last_completion_date()
-                last_str = last_completion.strftime("%Y-%m-%d") if last_completion else "Never"
-                streak = habit.calculate_current_streak()
-                print(f"{i}. {habit.title} ({habit.frequency}) - Streak: {streak} - Last: {last_str}")
+                print(f"{i}. {habit.title} ({habit.frequency})")
 
         # HABIT DETAILS
         elif choice == "4":
@@ -142,23 +141,9 @@ def main():
             else:
                 print("Deletion cancelled.")
 
-       
-        #Overall Summary
-        elif choice == "6":
-            print("\n--- Overall Summary ---")
-            summary = manager.summary()
-            print(f"Total Habits: {summary['total_habits']}")
-            print(f"Longest Streak: {summary['strongest_streak']}")
-            rate = summary.get('average_completion_rate')
-            if isinstance(rate, (int, float)):
-                print(f"average Completion Rate: {rate * 100:.1f}%")
-            else:
-                print("average Completion Rate: N/A")
-            print(f"Broken Habits: {summary['broken_habits']}")
-            print(f"Unbroken Habits: {summary['unbroken_habits']}")
         
         # Analytics
-        elif choice == "7":
+        elif choice == "6":
 
             while True:
                 print("\n--- Analytics Menu ---")
@@ -170,9 +155,10 @@ def main():
                 print("6. View Daily Habits")
                 print("7. View Weekly Habits")
                 print("8. View Habits Ranked by Current Streak")
-                print("9. Back to Main Menu")
+                print("9. View Overall Summary")
+                print("10. Back to Main Menu")
 
-                sub_choice = input("Enter your choice (1-8): ").strip()
+                sub_choice = input("Enter your choice (1-10): ").strip()
     
                 #Displays completion rates
                 if sub_choice == '1':
@@ -265,12 +251,26 @@ def main():
                     for i, habit in enumerate(ranked, 1):
                         streak = habit.calculate_current_streak()
                         print(f"{i}. {habit.title}: {streak} days")
-    
+
+                #Overall Summary
+                elif sub_choice == "9":
+                    print("\n--- Overall Summary ---")
+                    summary = manager.summary()
+                    print(f"Total Habits: {summary['total_habits']}")
+                    print(f"Longest Streak: {summary['strongest_streak']}")
+                    rate = summary.get('average_completion_rate')
+                    if isinstance(rate, (int, float)):
+                        print(f"average Completion Rate: {rate * 100:.1f}%")
+                    else:
+                        print("average Completion Rate: N/A")
+                    print(f"Broken Habits: {summary['broken_habits']}")
+                    print(f"Unbroken Habits: {summary['unbroken_habits']}")
+
                 #Back to main menu
-                elif sub_choice == '9':
+                elif sub_choice == '10':
                     break
                 else:
-                    print("Invalid choice. Please enter a number between 1 and 8. ")
+                    print("Invalid choice. Please enter a number between 1 and 10. ")
 
         elif choice == "8": 
             print("\nThank you for using the Habit Tracking Application!")
@@ -279,10 +279,14 @@ def main():
             break
 
         else:
-            print("Invalid choice. Please enter a number between 1 and 8.")
+            print("Invalid choice. Please enter a number between 1 and 7.")
 if __name__ == "__main__":
     main()
             
+
+
+
+
 
 
 
