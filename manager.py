@@ -8,13 +8,12 @@ from storage import DatabaseHandler
 from analytics_module import (
     filter_by_frequency,
     largest_streak,
-    streak_for_single_habit,
+    largest_streak_for_habit,
     broken_habits,
     unbroken_habits,
     completion_rates,
     average_completion_rate,
     rank_by_streak,
-    rank_by_consistency,
     overall_summary
 )
 
@@ -114,12 +113,12 @@ class HabitManager:
         return largest_streak(self.habits)
 
     
-    def get_habit_streak(self, title: str) -> Optional[int]:
+    def largest_streak_for_habit(self, title: str) -> Optional[int]:
         """
         Gets the current streak for a specific habit.
         """
         habit = self.get_habit_by_title(title)
-        return streak_for_single_habit(habit) if habit else None
+        return largest_streak_for_habit(habit) if habit else None
 
     
     def broken_habits(self) -> List[Habit]:
@@ -156,14 +155,6 @@ class HabitManager:
         Returns habits sorted by current streak (highest first).
         """
         return rank_by_streak(self.habits)
-
-    
-
-    def get_habits_ranked_by_consistency(self) -> List[Habit]:
-        """
-        Returns habits sorted by completion rate (highest first).
-        """
-        return rank_by_consistency(self.habits)
 
     
     def summary(self):
