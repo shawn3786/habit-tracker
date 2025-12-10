@@ -50,7 +50,6 @@ class Habit:
         # Add this completion to our tracking history
         self.history.append(completion_time)
 
-    
 
     def calculate_current_streak(self) -> int:
         """
@@ -81,7 +80,19 @@ class Habit:
             else:
                 break
         return streak
-        
+
+
+    def total_completed_days(self) -> int:
+        """
+        Returns the total number of unique days this habit was completed.
+        """
+        if not self.history:
+            return 0
+
+        # Convert all datetimes to just date, remove duplicates
+        completed_dates = {entry.date() for entry in self.history}
+        return len(completed_dates)
+
 
     def broken(self) -> bool:
         """
@@ -160,7 +171,8 @@ class Habit:
         return (
              f"Habit: {self.title}\n"
              f"Frequency: {self.frequency}\n"
-             f"Current Streak: {self.calculate_current_streak()}\n"
-             f"Was ever broken: {'Yes' if self.broken() else 'No'}\n"
+             f"Total Completed Days: {self.total_completed_days()}\n"
+             f"Ever broken: {'Yes' if self.broken() else 'No'}\n"
              f"Last completed: {last.strftime('%Y-%m-%d') if last else 'Never'}\n"
+             f"Created on: {self.start_date.strftime('%Y-%m-%d')}\n"
         )
