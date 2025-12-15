@@ -37,7 +37,7 @@ def main():
 
     while True:
         display_menu()
-        choice = input("Enter your choice (1-8): ")
+        choice = input("Enter your choice (1-7): ")
         
         # Handle habit creation
         if choice == "1":
@@ -272,7 +272,7 @@ def main():
                 else:
                     print("Invalid choice. Please enter a number between 1 and 10. ")
 
-        elif choice == "8": 
+        elif choice == "7": 
             print("\nThank you for using the Habit Tracking Application!")
             print("Goodbye! 👋")
             manager.close()
